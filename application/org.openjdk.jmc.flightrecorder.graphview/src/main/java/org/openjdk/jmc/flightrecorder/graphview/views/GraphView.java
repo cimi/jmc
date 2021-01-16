@@ -129,16 +129,16 @@ public class GraphView extends ViewPart implements ISelectionListener {
 				return;
 			}
 			// Add support for selected attribute later...
-			StacktraceGraphModel model = new StacktraceGraphModel(separator, items, null);
-			if (isInvalid) {
-				return;
-			}
-			String dotString = GraphView.toDot(model, maxNodesRendered);
+//			StacktraceGraphModel model = new StacktraceGraphModel(separator, items, null);
+//			if (isInvalid) {
+//				return;
+//			}
+//			String dotString = GraphView.toDot(model, maxNodesRendered);
 			if (isInvalid) {
 				return;
 			} else {
 				view.modelState = ModelState.FINISHED;
-				DisplayToolkit.inDisplayThread().execute(() -> view.setModel(items, dotString));
+				DisplayToolkit.inDisplayThread().execute(() -> view.setModel(items, ""));
 			}
 		}
 	}
@@ -162,7 +162,7 @@ public class GraphView extends ViewPart implements ISelectionListener {
 	private IItemCollection currentItems;
 	private volatile ModelState modelState = ModelState.NONE;
 	private ModelRebuildRunnable modelRebuildRunnable;
-	private int maxNodesRendered = 100;
+	private int htmlSize = 100;
 
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
@@ -183,11 +183,14 @@ public class GraphView extends ViewPart implements ISelectionListener {
 
 	private class NodeThresholdSelection extends Action implements IMenuCreator {
 		private Menu menu;
-		private final List<Pair<String, Integer>> items = List.of(new Pair<>("100", 100), new Pair<>("500", 500),
-				new Pair<>("1000", 1000));
+		private final List<Pair<String, Integer>> items = List.of(new Pair<>("0.5 MB", 512 * 1024),
+				new Pair<>("1.0 MB", 1024 * 1024), new Pair<>("1.1 MB", (1024 + 128) * 1024),
+				new Pair<>("1.2 MB", (1024 + 256) * 1024), new Pair<>("1.4 MB", (1024 + 384) * 1024),
+				new Pair<>("1.5 MB", (1024 + 512) * 1024), new Pair<>("2.0 MB", 2 * 1024 * 1024),
+				new Pair<>("3.0 MB", 3 * 1024 * 1024));
 
 		NodeThresholdSelection() {
-			super("Max Nodes", IAction.AS_DROP_DOWN_MENU);
+			super("html size", IAction.AS_DROP_DOWN_MENU);
 			setMenuCreator(this);
 		}
 
@@ -217,7 +220,7 @@ public class GraphView extends ViewPart implements ISelectionListener {
 		private void populate(Menu menu) {
 			for (Pair<String, Integer> item : items) {
 				ActionContributionItem actionItem = new ActionContributionItem(
-						new SetNodeThreshold(item, item.right == maxNodesRendered));
+						new SetNodeThreshold(item, item.right == htmlSize));
 				actionItem.fill(menu, -1);
 			}
 		}
@@ -234,8 +237,8 @@ public class GraphView extends ViewPart implements ISelectionListener {
 
 		@Override
 		public void run() {
-			if (maxNodesRendered != value) {
-				maxNodesRendered = value;
+			if (htmlSize != value) {
+				htmlSize = value;
 				triggerRebuildTask(currentItems);
 			}
 		}
@@ -284,7 +287,7 @@ public class GraphView extends ViewPart implements ISelectionListener {
 
 		currentItems = items;
 		modelState = ModelState.NOT_STARTED;
-		modelRebuildRunnable = new ModelRebuildRunnable(this, frameSeparator, items, maxNodesRendered);
+		modelRebuildRunnable = new ModelRebuildRunnable(this, frameSeparator, items, htmlSize);
 		if (!modelRebuildRunnable.isInvalid) {
 			MODEL_EXECUTOR.execute(modelRebuildRunnable);
 		}
@@ -297,7 +300,7 @@ public class GraphView extends ViewPart implements ISelectionListener {
 	}
 
 	private void setViewerInput(String model) {
-		browser.setText(HTML_PAGE);
+		browser.setText(generateHtml(htmlSize));
 
 		browser.addProgressListener(new ProgressAdapter() {
 			private boolean loaded = false;
@@ -312,10 +315,21 @@ public class GraphView extends ViewPart implements ISelectionListener {
 			@Override
 			public void completed(ProgressEvent event) {
 				browser.removeProgressListener(this);
-				browser.execute(String.format("processGraph(`%s`);", model));
+//				browser.execute(String.format("processGraph(`%s`);", model));
 				loaded = true;
 			}
 		});
+	}
+
+	private String generateHtml(int size) {
+		String prefix = "<!DOCTYPE html><html><body><pre>";
+		String suffix = "</pre></body></html>";
+		StringBuilder html = new StringBuilder(prefix);
+		for (int i = 0; i < size - (prefix.length() + suffix.length()); i++) {
+			html.append(i % 80 == 0 ? "\n" : "A");
+		}
+		html.append(suffix);
+		return html.toString();
 	}
 
 	private static String toDot(StacktraceGraphModel model, int maxNodesRendered) {
