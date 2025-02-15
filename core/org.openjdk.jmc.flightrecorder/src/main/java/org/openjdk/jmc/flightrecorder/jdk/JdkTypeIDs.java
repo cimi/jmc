@@ -148,6 +148,11 @@ public final class JdkTypeIDs {
 	public static final String JAVA_THREAD_START = PREFIX + "ThreadStart";
 	public static final String JAVA_THREAD_END = PREFIX + "ThreadEnd";
 
+	public static final String VIRTUAL_THREAD_START = PREFIX + "VirtualThreadStart";
+	public static final String VIRTUAL_THREAD_END = PREFIX + "VirtualThreadEnd";
+	public static final String VIRTUAL_THREAD_PINNED = PREFIX + "VirtualThreadPinned";
+	public static final String VIRTUAL_THREAD_SUBMIT_FAILED = PREFIX + "VirtualThreadSubmitFailed";
+
 	public static final String VM_OPERATIONS = PREFIX + "ExecuteVMOperation";
 	public static final String VM_SHUTDOWN = PREFIX + "Shutdown";
 
