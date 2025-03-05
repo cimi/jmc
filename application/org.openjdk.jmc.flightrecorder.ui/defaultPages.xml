@@ -531,6 +531,17 @@
 			        <threadLane name="Other Types" enabled="false" editable="false" isRestLane="true"/>
 			    </state>
 			</page>
+			<!-- Virtual Threads Page -->
+			<page factory="org.openjdk.jmc.flightrecorder.ui.virtualthreads" id="org.openjdk.jmc.flightrecorder.ui.virtualthreads">
+			    <state>
+			        <sash weights="1,5" />
+					<eventList0 sortColumn="(thread).javaThreadId">
+						<column id="(thread).javaThreadId" width="70" sortAscending="true" />
+						<column id="eventThread" width="136" />
+						<column id="startTime" width="180" />
+					</eventList0>
+			    </state>
+			</page>
   		</page>
 		<page factory="org.openjdk.jmc.flightrecorder.ui.heap" id="org.openjdk.jmc.flightrecorder.ui.heap">
 			<state>
